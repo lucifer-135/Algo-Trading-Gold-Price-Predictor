@@ -27,10 +27,23 @@ An end-to-end Machine Learning application that forecasts gold price trends and 
 * **Data Processing:** Pandas, NumPy
 * **Visualization:** Matplotlib
 
-## 📂 Project Structure
+## 🚀 How to Run Locally
 
+### Prerequisites
+* Python 3.8 or higher
+
+### Step 1: Clone the Repository
 ```bash
-├── app.py                # Main application script (Streamlit + ML Logic)
-├── gold_price.csv        # Historical dataset (Time-series data)
-├── requirements.txt      # List of dependencies
-└── README.md             # Project documentation
+git clone https://github.com/lucifer-135/Algo-Trading-Gold-Price-Predictor.git
+cd Algo-Trading-Gold-Price-Predictor
+```
+
+### Step 2: Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Step 4: Launch the App
+```bash
+streamlit run app.py
+```
