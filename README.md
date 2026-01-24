@@ -19,6 +19,14 @@ An end-to-end Machine Learning application that forecasts gold price trends and 
 * **Algorithmic Backtesting:** Simulates a trading strategy based on model predictions and calculates Cumulative Return vs. Market Baseline.
 * **Interactive Dashboard:** A user-friendly web interface allowing real-time parameter tuning (Training Window, Moving Average configurations).
 
+## 📓 Exploratory Data Analysis (EDA)
+
+The repository includes a Jupyter Notebook (`gold_price_prediction.ipynb`) that documents the research and prototyping phase:
+* **Data Visualization:** Detailed plots of price history, return distributions, and correlation heatmaps.
+* **Model Comparison:** Initial experiments comparing Linear Regression vs. Random Forest performance.
+* **Feature Importance:** Analysis of which indicators (Volatility, Momentum, etc.) had the most impact on price direction.
+* *Note: This notebook serves as the "lab report" showing the rationale behind the final model selection.*
+
 ## 🛠️ Tech Stack
 
 * **Language:** Python
