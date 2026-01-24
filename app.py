@@ -30,8 +30,8 @@ except FileNotFoundError:
 #SIDEBAR CONTROLS
 st.sidebar.header("⚙️ Model Parameters")
 split_year = st.sidebar.slider("Training Cutoff Year", 2015, 2018, 2018)
-ma_window = st.sidebar.slider("Moving Average Window", 2, 30, 3)
-volatility_window = st.sidebar.slider("Volatility Window", 2, 30, 7)
+ma_window = st.sidebar.slider("Moving Average Window (In Days)", 2, 30, 3)
+volatility_window = st.sidebar.slider("Volatility Window (In Days)", 2, 30, 7)
 
 #FEATURE ENGINEERING
 df['SMA'] = df['Lagged_Return'].rolling(window=ma_window).mean()
@@ -89,4 +89,5 @@ final_strategy = test['Cumulative_Strategy'].iloc[-1]
 if final_strategy > final_market:
     st.success(f"🚀 The Random Forest beat the market!")
 else:
+
     st.warning("⚠️ The market performed better this time. Try adjusting the sliders.")
