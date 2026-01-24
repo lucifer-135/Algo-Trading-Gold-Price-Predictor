@@ -1,6 +1,6 @@
 # 💰 Algo-Trading Gold Price Predictor
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/)
+[![Streamlit App]([https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/](https://algo-trading-gold-price-predictor.streamlit.app/))
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Scikit-Learn](https://img.shields.io/badge/Library-Scikit--Learn-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
