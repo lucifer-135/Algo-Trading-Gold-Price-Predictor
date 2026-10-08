@@ -36,6 +36,8 @@ The conclusion is that daily gold direction is close to unpredictable from its o
 
 The [Streamlit app](https://algo-trading-gold-price-predictor.streamlit.app/) lets you switch models, change the test start year, entry threshold, trading costs and feature windows. Every view is compared against the naive baseline and buy & hold.
 
+It's built for non-specialists too. There's a step-by-step "How to use this dashboard" guide, a hover tooltip on every control, metric and table column, a "how to read this" note for each chart, and a searchable 📖 Glossary of 26 terms (Sharpe ratio, drawdown, walk-forward validation, look-ahead bias and more).
+
 | Model comparison | Year by year |
 |---|---|
 | ![Model comparison tab](docs/model_comparison.png) | ![Year-by-year tab](docs/year_by_year.png) |
@@ -65,6 +67,7 @@ All features are computed from information available at the previous day's PM fi
 
 ```
 ├── app.py                        # Streamlit dashboard
+├── glossary.py                   # Plain-English definitions behind the app's tooltips and Glossary tab
 ├── gold_price_prediction.ipynb   # Narrative analysis: EDA → features → walk-forward → backtest
 ├── goldpred/                     # Reusable, tested pipeline
 │   ├── data.py                   #   load and clean LBMA prices

@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from glossary import COLUMN_HELP, MODEL_INFO, TERMS
 from goldpred.backtest import buy_and_hold, drawdown_curve, equity_curve, performance
 from goldpred.data import load_prices
 from goldpred.evaluate import classification_metrics, walk_forward
@@ -42,24 +43,37 @@ def get_predictions(model_name: str, first_test_year: int, windows: tuple[int, i
 # ---------- sidebar ----------
 with st.sidebar:
     st.header("⚙️ Settings")
-    model_name = st.selectbox("Model", MODEL_NAMES, index=MODEL_NAMES.index("Random Forest"))
+    st.caption("Hover the small **?** icons for definitions, or open the 📖 Glossary tab.")
+    model_name = st.selectbox(
+        "Model", MODEL_NAMES, index=MODEL_NAMES.index("Random Forest"),
+        help="The classifier being tested. Pick the baseline to see the benchmark every model has to beat.",
+    )
+    st.caption(MODEL_INFO[model_name])
     first_test_year = st.slider(
         "First out-of-sample year", 2006, 2018, 2010,
-        help="Each year from here on is predicted by a model trained only on earlier years.",
+        help="Where testing starts. Each year from here on is predicted by a model trained only on "
+        "earlier years (walk-forward validation). Earlier start = more test years, less training data.",
     )
     st.subheader("Strategy")
     threshold = st.slider(
         "Go long when P(up) >", 0.40, 0.60, 0.50, 0.01,
-        help="Otherwise the strategy holds cash for the day.",
+        help=TERMS["P(up) threshold"] + " Otherwise the strategy holds cash for the day.",
     )
     cost_bps = st.slider(
         "Transaction cost (bps per trade)", 0.0, 20.0, 5.0, 0.5,
-        help="Charged every time the position changes. 1 bp = 0.01%.",
+        help=TERMS["Transaction cost"] + " " + TERMS["Basis point (bp)"],
     )
     with st.expander("Feature windows (trading days)"):
-        short_window = st.slider("Short trend", 3, 20, 5)
-        long_window = st.slider("Long trend", 10, 100, 20)
-        vol_window = st.slider("Volatility", 5, 60, 10)
+        st.caption("How many past trading days each feature looks back over.")
+        short_window = st.slider(
+            "Short trend", 3, 20, 5,
+            help="Length of the short moving average. The feature is yesterday's price relative to it.",
+        )
+        long_window = st.slider(
+            "Long trend", 10, 100, 20,
+            help="Length of the long moving average. Captures slower, multi-week trends.",
+        )
+        vol_window = st.slider("Volatility", 5, 60, 10, help=TERMS["Volatility"])
     st.caption(
         "Defaults were fixed before looking at test results. Sliding these until the "
         "backtest looks good is overfitting to the test period, not a better model."
@@ -85,19 +99,49 @@ st.markdown(
     f"trading days** ({test_period}) and traded as a long/cash strategy after costs."
 )
 
+with st.expander("🧭 New here? How to use this dashboard"):
+    st.markdown(
+        """
+1. **Pick a model** in the sidebar (on mobile, tap **›** at the top left to open it). Each model
+   is trained only on years *before* the one it predicts, exactly as it would be used in real life.
+2. **Read the five numbers below.** The small coloured tag under each compares the model with the
+   naive *baseline* or with simply *buying and holding gold*: green is better, red is worse.
+3. **Read the verdict box.** It sums up whether the model shows real skill and whether that
+   skill survives trading costs.
+4. **Explore the tabs:**
+   - 📈 **Backtest**: how \\$1 would have grown trading on the model, and how costs erode it.
+   - 🧪 **Model comparison**: all four models side by side on identical test data.
+   - 📅 **Year by year**: whether results are consistent or driven by a few lucky years.
+   - 🔍 **Methodology**: how the data, features and testing work.
+   - 📖 **Glossary**: plain-English definitions of every term, with search.
+5. **Hover the small ? icons** (or a table column header) for a quick definition.
+
+⚠️ *Changing the sliders until the backtest looks great is overfitting: you're fitting to the
+test period, not finding a better model. The defaults were fixed before any results were seen.*
+"""
+    )
+
 cols = st.columns(5)
 cols[0].metric(
-    "Directional accuracy", f"{clf['accuracy']:.1%}",
+    "Accuracy", f"{clf['accuracy']:.1%}",
     f"{pp(clf['accuracy'] - base_clf['accuracy'])} vs baseline",
-    help=f"±{clf['accuracy_ci95']:.1%} is the 95% noise band for this many days. "
-    f"Baseline = always predict the training set's most common direction.",
+    help=f"{TERMS['Accuracy']}\n\nThe noise band for {clf['n_days']:,} days is ±{clf['accuracy_ci95']:.1%}: "
+    f"a smaller gap to the baseline ({base_clf['accuracy']:.1%}) could be pure luck.",
 )
-cols[1].metric("ROC AUC", f"{clf['roc_auc']:.3f}", help="0.5 = no better than a coin flip.")
-cols[2].metric("Strategy CAGR", f"{strat['cagr']:.1%}", f"{pp(strat['cagr'] - market['cagr'])} vs buy & hold")
-cols[3].metric("Sharpe ratio", f"{strat['sharpe']:.2f}", f"{strat['sharpe'] - market['sharpe']:+.2f} vs buy & hold")
+cols[1].metric("ROC AUC", f"{clf['roc_auc']:.3f}", help=TERMS["ROC AUC"])
+cols[2].metric(
+    "CAGR", f"{strat['cagr']:.1%}", f"{pp(strat['cagr'] - market['cagr'])} vs buy & hold",
+    help=f"{TERMS['CAGR']}\n\nStrategy after costs vs. buy & hold ({market['cagr']:.1%}).",
+)
+cols[3].metric(
+    "Sharpe ratio", f"{strat['sharpe']:.2f}", f"{strat['sharpe'] - market['sharpe']:+.2f} vs buy & hold",
+    help=f"{TERMS['Sharpe ratio']}\n\nBuy & hold gold scored {market['sharpe']:.2f}.",
+)
 cols[4].metric(
     "Max drawdown", f"{strat['max_drawdown']:.1%}",
     f"{pp(strat['max_drawdown'] - market['max_drawdown'])} vs buy & hold",
+    help=f"{TERMS['Drawdown']}\n\nBuy & hold's worst fall was {market['max_drawdown']:.1%}; "
+    "a green tag means the strategy's worst fall was smaller.",
 )
 
 edge = clf["accuracy"] - base_clf["accuracy"]
@@ -113,12 +157,18 @@ verdict = (
 )
 (st.success if significant and beats_market else st.info)(verdict, icon="🧭")
 
-tab_backtest, tab_models, tab_years, tab_method = st.tabs(
-    ["📈 Backtest", "🧪 Model comparison", "📅 Year by year", "🔍 Methodology"]
+tab_backtest, tab_models, tab_years, tab_method, tab_glossary = st.tabs(
+    ["📈 Backtest", "🧪 Model comparison", "📅 Year by year", "🔍 Methodology", "📖 Glossary"]
 )
 
 # ---------- backtest ----------
 with tab_backtest:
+    st.caption(
+        "**How to read this:** the top chart shows how **\\$1** invested on the first test day would have "
+        "grown, for the model's strategy (gold) and for buying and holding gold (grey). The bottom chart "
+        "shows the **drawdown**: how far each was below its previous peak. Shallower is better. "
+        "Hover the chart to see the values on any date."
+    )
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.7, 0.3], vertical_spacing=0.04)
     for daily, name, color in [(market_daily, "Buy & hold gold", GREY), (strat_daily, f"{model_name} strategy", GOLD)]:
         fig.add_scatter(x=daily.index, y=equity_curve(daily), name=name, line=dict(color=color), row=1, col=1)
@@ -132,13 +182,28 @@ with tab_backtest:
                       legend=dict(orientation="h", y=1.06, x=0))
     st.plotly_chart(fig, width="stretch")
 
+    years_tested = len(oos) / 252
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Time in market", f"{strat['exposure']:.0%}")
-    c2.metric("Trades", f"{strat['trades']:,}")
-    c3.metric("Strategy total return", f"{strat['total_return']:.0%}")
-    c4.metric("Buy & hold total return", f"{market['total_return']:.0%}")
+    c1.metric("Time in market", f"{strat['exposure']:.0%}", help=TERMS["Time in market"])
+    c2.metric(
+        "Trades", f"{strat['trades']:,}",
+        help=f"{TERMS['Trade']} That's about {strat['trades'] / years_tested:.0f} trades a year.",
+    )
+    c3.metric(
+        "Strategy total return", f"{strat['total_return']:.0%}",
+        help=f"Overall gain or loss over the whole test period ({test_period}), after costs.",
+    )
+    c4.metric(
+        "Buy & hold total return", f"{market['total_return']:.0%}",
+        help=TERMS["Buy & hold"],
+    )
 
     st.subheader("How much do trading costs matter?")
+    st.caption(
+        "Each point re-runs the same backtest with a different cost per trade (x-axis). Where the gold "
+        "line drops below the grey one, costs have eaten the model's advantage. The dotted line marks "
+        "the cost currently set in the sidebar."
+    )
     costs = np.arange(0, 20.01, 0.25)
     sweep = pd.DataFrame(
         {
@@ -169,16 +234,34 @@ with tab_models:
         f"Every model is trained and tested on identical walk-forward folds "
         f"(threshold {threshold:.2f}, costs {cost_bps:g} bps)."
     )
-    all_oos = {name: get_predictions(name, first_test_year, windows) for name in MODEL_NAMES}
-    table = format_table(summarize(all_oos, threshold, cost_bps))
-    st.dataframe(table, width="stretch")
     st.caption(
-        "Accuracy is shown with its 95% noise band. The majority-class baseline always "
-        "predicts 'up' when gold rose on most training days, which makes it identical to buy & hold."
+        "**How to read this:** a useful model needs *both* accuracy clearly above the baseline row "
+        "*and* a higher Sharpe ratio than the buy & hold row. Hover a column header for its definition."
+    )
+    all_oos = {name: get_predictions(name, first_test_year, windows) for name in MODEL_NAMES}
+    table = format_table(summarize(all_oos, threshold, cost_bps)).rename_axis("Model").reset_index()
+    st.dataframe(
+        table, width="stretch", hide_index=True,
+        column_config={
+            "Model": st.column_config.TextColumn("Model", help="Open \"What are these models?\" below the table."),
+            **{col: st.column_config.TextColumn(col, help=text) for col, text in COLUMN_HELP.items()},
+        },
+    )
+    with st.expander("What are these models?"):
+        st.markdown("\n".join(f"- **{name}**: {text}" for name, text in MODEL_INFO.items()))
+    st.caption(
+        "The majority-class baseline always predicts 'up' when gold rose on most training days, "
+        "which makes it identical to buy & hold."
     )
 
 # ---------- per year ----------
 with tab_years:
+    st.caption(
+        "**How to read this:** a genuinely skilful model should beat the 50% coin-flip line (dotted) "
+        "in most years, not just a lucky few. **Left:** the model's accuracy each year (bars) next to "
+        "how often gold actually rose (line). **Right:** each calendar year's return after costs, "
+        "strategy vs. buy & hold."
+    )
     year = oos.index.year
     correct = (oos["proba_up"] > threshold).astype(int) == oos["target"]
     yearly = pd.DataFrame(
@@ -234,3 +317,17 @@ so {clf['up_day_rate']:.0%} accuracy is what "always say up" achieves. A model i
 statistical noise band, and if its trading edge survives realistic costs.
 """
     )
+
+# ---------- glossary ----------
+with tab_glossary:
+    query = st.text_input(
+        "Search terms", placeholder="e.g. Sharpe, drawdown, walk-forward…",
+        help="Matches term names and definitions.",
+    ).strip().lower()
+    matches = {term: text for term, text in TERMS.items() if query in term.lower() or query in text.lower()}
+    if not matches:
+        st.info(f"No terms match \"{query}\". Try a shorter word.")
+    else:
+        st.caption(f"Showing {len(matches)} of {len(TERMS)} terms.")
+    for term, text in sorted(matches.items(), key=lambda item: item[0].lower()):
+        st.markdown(f"**{term}**  \n{text}")
