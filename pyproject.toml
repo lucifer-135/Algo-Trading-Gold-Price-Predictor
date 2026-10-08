@@ -1,0 +1,9 @@
+[project]
+name = "goldpred"
+version = "1.0.0"
+description = "Gold price direction forecasting with walk-forward validation and a cost-aware backtest"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
